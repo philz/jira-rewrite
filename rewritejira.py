@@ -27,6 +27,15 @@ modified message in --dest.  The original message is moved to --backup.
 #    much superceded by the email package.
 #  * imapsync (http://www.linux-france.org/prj/imapsync/README) has some of this
 #    functionality, and is more generic.
+#
+# EXAMPLE OUTPUT:
+#   $ python rewritejira.py --username ...@....com --source hadoop-jira --dest hadoop-jira-rewritten --backup hadoop-jira-orig
+#   Password: 
+#   INFO:__main__:Looking at 3 messages.
+#   INFO:__main__:[3] Subject: '[jira] Commented: (HADOOP-5649) Enable ServicePlugins for the\r\n JobTracker' -> '(HADOOP-5649) Enable ServicePlugins for the\r\n JobTracker'
+#   INFO:__main__:[2] Subject: '[jira] Commented: (HADOOP-5581) libhdfs does not get\r\n FileNotFoundException' -> '(HADOOP-5581) libhdfs does not get\r\n FileNotFoundException'
+#   INFO:__main__:[1] Subject: '[jira] Commented: (HADOOP-5638) More improvement on block placement\r\n performance' -> '(HADOOP-5638) More improvement on block placement\r\n performance'
+#   INFO:__main__:Rewrote 3 messages.
 
 import email
 import email.header
