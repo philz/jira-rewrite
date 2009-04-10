@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Re-writes JIRA subject lines to remove JIRA's "Updated/Commented/Created" annotations.
 JIRA's default subjects break Gmail's threading (which threads by subject line); making the
@@ -5,7 +6,7 @@ subject line uniform unbreaks Gmail's threading.
 """
 # FEATURES:
 #  * GMail's internal dates are preserved, so messages are dated and sorted according
-#    to their original arival.
+#    to their original arrival.
 # 
 # BUGS:
 #  * I believe Google throttles the IMAP requests.  Probably possible to use fancier
@@ -168,12 +169,12 @@ if __name__ == "__main__":
   parser.add_option("--dest", help="Folder to save rewritten messages.  Folder (label) must already exist.")
   parser.add_option("--backup", help="Folder where to save originals.  Folder (label) must already exist.")
 
-  parser.add_option("--regex", default=DEFAULT_RE, help="Regexp to match.")
-  parser.add_option("--replace", default=DEFAULT_REPLACE, help="Replacement.")
+  parser.add_option("--regex", default=DEFAULT_RE, help="Regexp to match.  Default: %default")
+  parser.add_option("--replace", default=DEFAULT_REPLACE, help="Replacement.  Default: %default")
 
   parser.add_option("--dryrun", action="store_true", default=False, help="Print out what would be done.")
   parser.add_option("--pwfile", help="File storing password.")
-  parser.add_option("--imapserver", default="imap.gmail.com", help="IMAP server")
+  parser.add_option("--imapserver", default="imap.gmail.com", help="IMAP server.  Default: %default")
   parser.add_option("--username", help="Username")
   (options, args) = parser.parse_args()
   if args:
