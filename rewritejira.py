@@ -200,4 +200,4 @@ if __name__ == "__main__":
     count += rewrite(client, int(m), regex, options.replace, options.dest, options.backup, options.dryrun)
 
   logout(client)
-  loger.info("Rewrote %d messages." % count)
+  logger.info("Rewrote %d messages." % count)
