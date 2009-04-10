@@ -3,6 +3,10 @@
 Re-writes JIRA subject lines to remove JIRA's "Updated/Commented/Created" annotations.
 JIRA's default subjects break Gmail's threading (which threads by subject line); making the
 subject line uniform unbreaks Gmail's threading.
+
+Specifically, this looks at every message in --source, does a search and replace
+with --regex and --replace (defaults are for JIRA subject lines), and puts the
+modified message in --dest.  The original message is moved to --backup.
 """
 # FEATURES:
 #  * GMail's internal dates are preserved, so messages are dated and sorted according
