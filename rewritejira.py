@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 # Example subject line:
 #   Subject: Re: [jira] Updated: (HADOOP-4675) Current Ganglia metrics skipped.
 # This captures the JIRA ticket number, but ignores the text in between.
-DEFAULT_RE = r"\[jira\] (?:[A-Z][a-z]+): (\([A-Z]+-[0-9]+\))"
+DEFAULT_RE = r"\[jira\](?: (?:[A-Z][a-z]+))+: (\([A-Z]+-[0-9]+\))"
 DEFAULT_REPLACE = "\\1"
 
 def check(arg):
