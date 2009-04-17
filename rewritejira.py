@@ -44,6 +44,7 @@ import imaplib
 import logging
 import optparse
 import re
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +190,8 @@ if __name__ == "__main__":
   parser.add_option("--pwfile", help="File storing password.")
   parser.add_option("--imapserver", default="imap.gmail.com", help="IMAP server.  Default: %default")
   parser.add_option("--username", help="Username")
+  parser.add_option("--loop", action="store_true", help="Loop mode.  Run every 5 minutes.")
+  parser.add_option("--sleep", type=int, default=5*60, help="Sleep time between runs in loop mode.  Default: %default seconds.")
   (options, args) = parser.parse_args()
   if args:
     parser.error("Unexpected arguments: " + str(args))
@@ -202,16 +205,25 @@ if __name__ == "__main__":
   else:
     password = getpass.getpass()
 
-  client = login(options.imapserver, options.username, password)
-  select_mailbox(client, options.source)
-  regex = re.compile(options.regex, re.MULTILINE)
+  first = True
+  while first or options.loop:
+    first = False
+    try:
+      client = login(options.imapserver, options.username, password)
+      select_mailbox(client, options.source)
+      regex = re.compile(options.regex, re.MULTILINE)
 
-  message_ids = query(client)
-  logger.info("Looking at %d messages." % len(message_ids))
+      message_ids = query(client)
+      logger.info("Looking at %d messages." % len(message_ids))
 
-  count = 0
-  for m in message_ids:
-    count += rewrite(client, int(m), regex, options.replace, options.dest, options.backup, options.dryrun)
+      count = 0
+      for m in message_ids:
+        count += rewrite(client, int(m), regex, options.replace, options.dest, options.backup, options.dryrun)
 
-  logout(client)
-  logger.info("Rewrote %d messages." % count)
+      logout(client)
+      logger.info("Rewrote %d messages." % count)
+    except e:
+      logger.exception("Exception during processing.")
+    if options.loop:
+      logger.info("Sleeping for %d seconds." % options.sleep)
+      time.sleep(options.sleep)
