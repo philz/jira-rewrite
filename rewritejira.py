@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
       logout(client)
       logger.info("Rewrote %d messages." % count)
-    except e:
+    except Exception, e:
       logger.exception("Exception during processing.")
     if options.loop:
       logger.info("Sleeping for %d seconds." % options.sleep)
