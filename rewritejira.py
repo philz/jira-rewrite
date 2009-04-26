@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 # Example subject line:
 #   Subject: Re: [jira] Updated: (HADOOP-4675) Current Ganglia metrics skipped.
 # This captures the JIRA ticket number, but ignores the text in between.
-DEFAULT_RE = r"\[jira\](?: (?:[A-Z][a-z]+))+: (\([A-Z]+-[0-9]+\))"
+DEFAULT_RE = r"\[jira\](?: (?:[A-Za-z]+))+: (\([A-Z]+-[0-9]+\))"
 DEFAULT_REPLACE = "\\1"
 
 def check(arg):
@@ -76,8 +76,8 @@ def select_mailbox(client, mailbox):
   client.select(mailbox)
 
 def query(client):
-  """Queries all messages in selected mailbox."""
-  m = check(client.search(None, 'ALL'))[0]
+  """Queries for messages with subject containing [jira] in selected mailbox."""
+  m = check(client.search(None, 'SUBJECT', '[jira]'))[0]
   if not m:
     return []
   # The id numbers tend to come in ascending order.  We reverse
