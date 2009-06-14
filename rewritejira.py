@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.5
 """
 Re-writes JIRA subject lines to remove JIRA's "Updated/Commented/Created" annotations.
 JIRA's default subjects break Gmail's threading (which threads by subject line); making the
