@@ -15,10 +15,6 @@ modified message in --dest.  The original message is moved to --backup.
 # BUGS:
 #  * I believe Google throttles the IMAP requests.  Probably possible to use fancier
 #    IMAP to batch these guys.
-#  * Every once in a while you'll see:
-#   AssertionError: Error: ('NO', ['Unable to append message to folder (Failure)'])
-#    I think this happens when you're concurrently accessing your inbox (or possibly
-#    mail is getting delivered).  For now, retry.
 # 
 # REFERENCES:
 #  * RFC 2060 has the IMAP spec.
@@ -36,6 +32,9 @@ modified message in --dest.  The original message is moved to --backup.
 #   INFO:__main__:[2] Subject: '[jira] Commented: (HADOOP-5581) libhdfs does not get\r\n FileNotFoundException' -> '(HADOOP-5581) libhdfs does not get\r\n FileNotFoundException'
 #   INFO:__main__:[1] Subject: '[jira] Commented: (HADOOP-5638) More improvement on block placement\r\n performance' -> '(HADOOP-5638) More improvement on block placement\r\n performance'
 #   INFO:__main__:Rewrote 3 messages.
+
+# TODO: This was forked o make rewrite-pipe.py; one should
+# depend on the other.
 
 import email
 import email.header
