@@ -33,25 +33,17 @@ modified message in --dest.  The original message is moved to --backup.
 #   INFO:__main__:[1] Subject: '[jira] Commented: (HADOOP-5638) More improvement on block placement\r\n performance' -> '(HADOOP-5638) More improvement on block placement\r\n performance'
 #   INFO:__main__:Rewrote 3 messages.
 
-# TODO: This was forked o make rewrite-pipe.py; one should
-# depend on the other.
-
-import email
-import email.header
 import getpass
 import imaplib
 import logging
 import optparse
-import re
 import time
+import difflib
+import re
+
+from rewritejira import rewrite_message
 
 logger = logging.getLogger(__name__)
-
-# Example subject line:
-#   Subject: Re: [jira] Updated: (HADOOP-4675) Current Ganglia metrics skipped.
-# This captures the JIRA ticket number, but ignores the text in between.
-DEFAULT_RE = r"\[jira\](?: (?:[A-Za-z]+))+: (\([A-Z]+-[0-9]+\))"
-DEFAULT_REPLACE = "\\1"
 
 def check(arg):
   """imaplib functions tend to return (OK, foo).  This checks the OK and returns foo."""
@@ -72,7 +64,7 @@ def logout(client):
 
 def select_mailbox(client, mailbox):
   """Selects mailbox."""
-  client.select(mailbox)
+  check(client.select(mailbox))
 
 def query(client):
   """Queries for messages with subject containing [jira] in selected mailbox."""
@@ -108,7 +100,7 @@ def parse_message_fetch(ret):
 
   return message, flags, date
 
-def rewrite(client, message_id, regex, replacement, dest, backup, dryrun):
+def rewrite(client, message_id, dest, backup, dryrun):
   """
   Fetches a message, and rewrites subject line according to regex and replacement.
   
@@ -120,55 +112,28 @@ def rewrite(client, message_id, regex, replacement, dest, backup, dryrun):
     return 0
 
   message_str, flags, date = parse_message_fetch(ret)
-  message = email.message_from_string(message_str)
-  subject = message.get("Subject")
-  if not subject:
-    logger.warning("Message_id %d, empty subject." % message_id)
+  rewritten_message_str = rewrite_message(message_str)
+
+  if message_str == rewritten_message_str:
+    logger.warning("Message_id %d not changed." % message_id)
     return 0
 
-  new_subject = rewrite_subject(subject, regex, replacement)
-  if new_subject:
-    logger.info("[%d] Subject: %s -> %s", message_id, repr(subject), repr(new_subject))
-    if dryrun:
-      return 0
-
-    message.replace_header("Subject", new_subject)
-
-    # Store the new one first, so that if we fail, we can pick up where we left off.
-    # (Gmail doesn't mind duplicate stores.)
-    check(client.append(dest, flags, date, message.as_string()))
-
-    # Move the original to hadoop-jira-orig
-    check(client.copy(message_id, backup))
-
-    # Delete the current one
-    check(client.store(message_id, '+FLAGS', '\\Deleted'))
-    check(client.expunge())
+  if dryrun:
+    print "Message changed: "
+    print "\n".join([ l for l in difflib.unified_diff(message_str.splitlines(), rewritten_message_str.splitlines()) if l.startswith("+") or l.startswith("-")])
     return 1
 
-  logger.warning("Message_id %d, subject %s skipped." % (message_id, subject))
-  return 0
+  # Store the new one first, so that if we fail, we can pick up where we left off.
+  # (Gmail doesn't mind duplicate stores.)
+  check(client.append(dest, flags, date, rewritten_message_str))
 
-def rewrite_subject(subject, regex, replacement):
-  """
-  Rewrites subject by replaceing regex with replacement.
+  # Move the original to backup folder/label
+  check(client.copy(message_id, backup))
 
-  Returns None if no changes can be made.
-  This deals with annoying headers that look like "=?utf-8?Q?..." by
-  calling out to email.header.
-  """
-  decoded_subject = email.header.decode_header(subject)
-  new_subject = []
-  total_subs = 0
-  for (string, charset) in decoded_subject:
-    (newstring, num_subs) = regex.subn(replacement, string, 1)
-    total_subs += num_subs
-    new_subject.append( (newstring, charset) )
-  
-  if total_subs:
-    return email.header.make_header(new_subject).encode()
-  else:
-    return None
+  # Delete the current one
+  check(client.store(message_id, '+FLAGS', '\\Deleted'))
+  check(client.expunge())
+  return 1
 
 if __name__ == "__main__":
   logging.basicConfig(level=logging.INFO)
@@ -181,9 +146,6 @@ if __name__ == "__main__":
   parser.add_option("--source", help="Folder whose messages to rewrite.  Folder (label) must already exist.")
   parser.add_option("--dest", help="Folder to save rewritten messages.  Folder (label) must already exist.")
   parser.add_option("--backup", help="Folder where to save originals.  Folder (label) must already exist.")
-
-  parser.add_option("--regex", default=DEFAULT_RE, help="Regexp to match.  Default: %default")
-  parser.add_option("--replace", default=DEFAULT_REPLACE, help="Replacement.  Default: %default")
 
   parser.add_option("--dryrun", action="store_true", default=False, help="Print out what would be done.")
   parser.add_option("--pwfile", help="File storing password.")
@@ -210,14 +172,13 @@ if __name__ == "__main__":
     try:
       client = login(options.imapserver, options.username, password)
       select_mailbox(client, options.source)
-      regex = re.compile(options.regex, re.MULTILINE)
 
       message_ids = query(client)
       logger.info("Looking at %d messages." % len(message_ids))
 
       count = 0
       for m in message_ids:
-        count += rewrite(client, int(m), regex, options.replace, options.dest, options.backup, options.dryrun)
+        count += rewrite(client, int(m), options.dest, options.backup, options.dryrun)
 
       logout(client)
       logger.info("Rewrote %d messages." % count)
